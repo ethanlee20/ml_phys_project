@@ -1,0 +1,6 @@
+*.parquet
+*.root
+*.pdf
+__pycache__
+.env/
+.DS_Store
