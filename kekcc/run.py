@@ -2,44 +2,18 @@
 ### cd to this directory (kekcc) to run ###
 
 import subprocess
+from pathlib import Path
 
 from pandas import read_parquet
 
-from lib_sbi_btokstll.constants import path_to_data_dir
 
+### Helpers ###
 
-### Parameters ###
+def make_dec_file(e_or_mu, dc7, dc9, dc10, file_path):
 
-trial_range = range(0, 10) # each trial corresponds with a wilson coefficient sample
-events_per_trial = 1_000
-path_to_wilson_coefficient_samples = path_to_data_dir.joinpath("sampled_wilson_coefficients.parquet")
-path_to_output_dir = path_to_
+    assert e_or_mu in ("e", "mu")
 
-
-### Simulate ###
-
-sampled_wilson_coefficients_dataframe = read_parquet(path_to_wilson_coefficient_samples)
-
-for trial in trial_range:
-
-    wilson_coefficients_series = sampled_wilson_coefficients_dataframe.loc[trial]
-    dc7 = wilson_coefficients_series["dc7"]
-    dc9 = wilson_coefficients_series["dc9"]
-    dc10 = wilson_coefficients_series["dc10"]
-
-    round_to = 2
-    dc7_rounded = round(dc7, round_to)
-    dc9_rounded = round(dc9, round_to)
-    dc10_rounded = round(dc10, round_to)
-
-    file_name_base = f"trial_{trial}_dc7_{dc7_rounded}_dc9_{dc9_rounded}_dc10_{dc10_rounded}"
-    file_name_metadata = f"{file_name_base}.json"
-    file_name_sim = f"{file_name_base}.root"
-    file_name_recon = f"{file_name_base}_re.root"
-    file_name_dec = f"{file_name_base}.dec"
-    file_name_log  = f"{file_name_base}.log"
-
-    decay = f"""
+    content = f"""
     Alias MyB0 B0
     Alias MyAntiB0 anti-B0
     ChargeConj MyB0 MyAntiB0
@@ -54,7 +28,7 @@ for trial in trial_range:
     Enddecay
 
     Decay MyB0
-    1.000 MyK*0 mu+ mu- BTOSLLNPR 0 0 {dc7} 0 1 {dc9} 0 2 {dc10} 0;
+    1.000 MyK*0 {e_or_mu}+ {e_or_mu}- BTOSLLNPR 0 0 {dc7} 0 1 {dc9} 0 2 {dc10} 0;
     Enddecay
 
     CDecay MyAntiB0
@@ -68,14 +42,68 @@ for trial in trial_range:
     End
     """
 
-    wilson_coefficients_series.to_json(file_name_metadata)
+    with open(file_path, "w") as f:
+        f.write(content)
 
-    with open(file_name_dec, "w") as f:
-        f.write(decay)
 
-    subprocess.run(
-	f'bsub -q l "basf2 steer_sim.py -- {file_name_dec} {file_name_sim} {events_per_trial} &>> {file_name_log}'
-        f' && basf2 steer_recon.py {file_name_sim} {file_name_recon} &>> {file_name_log}'
-        f' && rm {file_name_sim}"',
-        shell=True,
-    )
+def make_file_paths(dc7, dc9, dc10, path_to_output_dir):
+
+    file_name_base = f"trial_{trial}_dc7_{dc7:.2f}_dc9_{dc9:.2f}_dc10_{dc10:.2f}"
+    file_names = {
+        "metadata" : f"{file_name_base}.json",
+        "sim_output" : f"{file_name_base}.root",
+        "recon_output" : f"{file_name_base}_re.root",
+        "dec" : f"{file_name_base}.dec",
+        "log" : f"{file_name_base}.log",
+    }
+    file_paths = {
+        kind : path_to_output_dir.joinpath(name) 
+        for kind, name in file_names.items()
+    }
+    return file_paths
+
+
+def get_wilson_coefficients_series(sampled_wilson_coefficients_dataframe, trial):
+
+    wilson_coefficients_series = sampled_wilson_coefficients_dataframe.loc[trial]
+    return wilson_coefficients_series
+
+
+if __name__ == "__main__":
+
+    ### Parameters ###
+    e_or_mu = "mu"
+    trial_range = range(0, 10) # each trial corresponds with a wilson coefficient sample
+    events_per_trial = 1_000
+    path_to_wilson_coefficient_samples = Path("../data/sampled_wilson_coefficients.parquet")
+    path_to_output_dir = Path("output/")
+    ###################
+
+    sampled_wilson_coefficients_dataframe = read_parquet(path_to_wilson_coefficient_samples)
+
+    for trial in trial_range:
+
+        metadata = get_wilson_coefficients_series(sampled_wilson_coefficients_dataframe, trial)
+        metadata["channel"] = e_or_mu
+
+        file_paths = make_file_paths(
+            dc7=metadata["dc7"], 
+            dc9=metadata["dc9"], 
+            dc10=metadata["dc10"], 
+            path_to_output_dir=path_to_output_dir
+        )
+
+        metadata.to_json(file_paths["metadata"])
+        make_dec_file(
+            e_or_mu=e_or_mu,
+            dc7=metadata["dc7"], 
+            dc9=metadata["dc9"], 
+            dc10=metadata["dc10"], 
+            file_path=file_paths["dec"]
+        )
+        subprocess.run(
+        f'bsub -q l "basf2 steer_sim.py -- {file_paths["dec"]} {file_paths["sim_output"]} {events_per_trial} &>> {file_paths["log"]}'
+            f' && basf2 steer_recon.py {e_or_mu} {file_paths["sim_output"]} {file_paths["recon_output"]} &>> {file_paths["log"]}'
+            f' && rm {file_paths["sim_output"]}"',
+            shell=True,
+        )
