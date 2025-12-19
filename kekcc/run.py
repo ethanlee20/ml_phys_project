@@ -76,7 +76,7 @@ if __name__ == "__main__":
     trial_range = range(0, 10) # each trial corresponds with a wilson coefficient sample
     events_per_trial = 1_000
     path_to_wilson_coefficient_samples = Path("../data/sampled_wilson_coefficients.parquet")
-    path_to_output_dir = Path("output/")
+    path_to_output_dir = Path("../data/kekcc_output/")
     ###################
 
     sampled_wilson_coefficients_dataframe = read_parquet(path_to_wilson_coefficient_samples)
@@ -85,6 +85,7 @@ if __name__ == "__main__":
 
         metadata = get_wilson_coefficients_series(sampled_wilson_coefficients_dataframe, trial)
         metadata["channel"] = e_or_mu
+        metadata["num_events"] = events_per_trial
 
         file_paths = make_file_paths(
             dc7=metadata["dc7"], 
