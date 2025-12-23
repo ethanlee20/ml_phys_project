@@ -1,5 +1,8 @@
 *.parquet
 *.root
+*.log
+*.dec
+*.json
 *.pdf
 __pycache__
 .env/

@@ -3,6 +3,7 @@
 
 import subprocess
 from pathlib import Path
+from itertools import product
 
 from pandas import read_parquet
 
@@ -46,9 +47,9 @@ def make_dec_file(e_or_mu, dc7, dc9, dc10, file_path):
         f.write(content)
 
 
-def make_file_paths(dc7, dc9, dc10, path_to_output_dir):
+def make_file_paths(trial, sub_trial, dc7, dc9, dc10, path_to_output_dir):
 
-    file_name_base = f"trial_{trial}_dc7_{dc7:.2f}_dc9_{dc9:.2f}_dc10_{dc10:.2f}"
+    file_name_base = f"trial_{trial}_{sub_trial}_dc7_{dc7:.2f}_dc9_{dc9:.2f}_dc10_{dc10:.2f}"
     file_names = {
         "metadata" : f"{file_name_base}.json",
         "sim_output" : f"{file_name_base}.root",
@@ -74,6 +75,7 @@ if __name__ == "__main__":
     ### Parameters ###
     e_or_mu = "mu"
     trial_range = range(0, 10) # each trial corresponds with a wilson coefficient sample
+    sub_trial_range = range(0, 1) # split up large jobs (repeats per trial)
     events_per_trial = 1_000
     path_to_wilson_coefficient_samples = Path("../data/sampled_wilson_coefficients.parquet")
     path_to_output_dir = Path("../data/kekcc_output/")
@@ -81,13 +83,17 @@ if __name__ == "__main__":
 
     sampled_wilson_coefficients_dataframe = read_parquet(path_to_wilson_coefficient_samples)
 
-    for trial in trial_range:
+    for trial, sub_trial in product(trial_range, sub_trial_range):
 
         metadata = get_wilson_coefficients_series(sampled_wilson_coefficients_dataframe, trial)
+        metadata["trial"] = trial
+        metadata["sub_trial"] = sub_trial
         metadata["channel"] = e_or_mu
         metadata["num_events"] = events_per_trial
 
         file_paths = make_file_paths(
+            trial=trial,
+            sub_trial=sub_trial,
             dc7=metadata["dc7"], 
             dc9=metadata["dc9"], 
             dc10=metadata["dc10"], 
