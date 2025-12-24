@@ -76,7 +76,7 @@ if __name__ == "__main__":
     e_or_mu = "mu"
     trial_range = range(0, 10) # each trial corresponds with a wilson coefficient sample
     sub_trial_range = range(0, 1) # split up large jobs (repeats per trial)
-    events_per_trial = 1_000
+    events_per_sub_trial = 1_000
     path_to_wilson_coefficient_samples = Path("../data/sampled_wilson_coefficients.parquet")
     path_to_output_dir = Path("../data/kekcc_output/")
     ###################
@@ -86,10 +86,10 @@ if __name__ == "__main__":
     for trial, sub_trial in product(trial_range, sub_trial_range):
 
         metadata = get_wilson_coefficients_series(sampled_wilson_coefficients_dataframe, trial)
-        metadata["trial"] = trial
-        metadata["sub_trial"] = sub_trial
+        metadata["trial"] = int(trial)
+        metadata["sub_trial"] = int(sub_trial)
         metadata["channel"] = e_or_mu
-        metadata["num_events"] = events_per_trial
+        metadata["num_events"] = events_per_sub_trial
 
         file_paths = make_file_paths(
             trial=trial,
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             file_path=file_paths["dec"]
         )
         subprocess.run(
-        f'bsub -q l "basf2 steer_sim.py -- {file_paths["dec"]} {file_paths["sim_output"]} {events_per_trial} &>> {file_paths["log"]}'
+        f'bsub -q l "basf2 steer_sim.py -- {file_paths["dec"]} {file_paths["sim_output"]} {events_per_sub_trial} &>> {file_paths["log"]}'
             f' && basf2 steer_recon.py {e_or_mu} {file_paths["sim_output"]} {file_paths["recon_output"]} &>> {file_paths["log"]}'
             f' && rm {file_paths["sim_output"]}"',
             shell=True,

@@ -4,30 +4,7 @@ import pandas
 import uproot
 
 
-def open_root_file_with_one_or_more_trees(path):
-    
-    """
-    Open a root file as a pandas dataframe.
 
-    The file can contain multiple trees.
-    Each tree will be labeled by a 
-    pandas multi-index.
-    """
-
-    file = uproot.open(path)
-
-    tree_names = [
-        name.split(';')[0] for name in ("gen", "det")
-    ]
-    
-    list_of_dataframes = [
-        file[name].arrays(library="pd") 
-        for name in tree_names
-    ] 
-
-    final_dataframe = pandas.concat(list_of_dataframes, keys=tree_names)
-
-    return final_dataframe
 
 
 def square_matrix_transform(matrix_dataframe, vector_dataframe):
