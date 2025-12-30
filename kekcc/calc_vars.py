@@ -1,10 +1,8 @@
 
+import pathlib
+
 import numpy
 import pandas
-import uproot
-
-
-
 
 
 def square_matrix_transform(matrix_dataframe, vector_dataframe):
@@ -788,15 +786,17 @@ def calculate_difference_between_invariant_masses_of_K_pi_system_and_K_star(
     return difference_series
 
 
-def calculate_B_to_K_star_mu_mu_variables(dataframe):
+def calculate_B_to_K_star_ell_ell_variables(dataframe, ell):
 
     """
-    Calculate detecor and generator level variables of B -> K* mu+ mu- decays.
+    Calculate detecor and generator level variables of B -> K* l+ l- decays.
 
     Variables: 
-    q^2, cosine theta mu, cosine theta K, cosine chi, chi, and the
+    q^2, cosine theta l, cosine theta K, cosine chi, chi, and the
     difference between K pi invariant mass and K* PDG invariant mass
     """
+
+    assert ell in ("mu", "e")
 
     B_meson_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
         dataframe[["E", "px", "py", "pz"]]
@@ -804,17 +804,17 @@ def calculate_B_to_K_star_mu_mu_variables(dataframe):
     B_meson_generated_four_momentum_dataframe = convert_to_four_momentum_dataframe(
         dataframe[["mcE", "mcPX", "mcPY", "mcPZ"]]
     )
-    positive_muon_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
-        dataframe[["mu_p_E", "mu_p_px", "mu_p_py", "mu_p_pz"]]
+    positive_lepton_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
+        dataframe[[f"{ell}_p_E", f"{ell}_p_px", f"{ell}_p_py", f"{ell}_p_pz"]]
     )
-    positive_muon_generated_four_momentum_dataframe = convert_to_four_momentum_dataframe(
-        dataframe[["mu_p_mcE", "mu_p_mcPX", "mu_p_mcPY", "mu_p_mcPZ"]]
+    positive_lepton_generated_four_momentum_dataframe = convert_to_four_momentum_dataframe(
+        dataframe[[f"{ell}_p_mcE", f"{ell}_p_mcPX", f"{ell}_p_mcPY", f"{ell}_p_mcPZ"]]
     )
-    negative_muon_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
-        dataframe[["mu_m_E", "mu_m_px", "mu_m_py", "mu_m_pz"]]
+    negative_lepton_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
+        dataframe[[f"{ell}_m_E", f"{ell}_m_px", f"{ell}_m_py", f"{ell}_m_pz"]]
     )
-    negative_muon_generated_four_momentum_dataframe = convert_to_four_momentum_dataframe(
-        dataframe[["mu_m_mcE", "mu_m_mcPX", "mu_m_mcPY", "mu_m_mcPZ"]]
+    negative_lepton_generated_four_momentum_dataframe = convert_to_four_momentum_dataframe(
+        dataframe[[f"{ell}_m_mcE", f"{ell}_m_mcPX", f"{ell}_m_mcPY", f"{ell}_m_mcPZ"]]
     )
     K_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
         dataframe[["K_p_E", "K_p_px", "K_p_py", "K_p_pz"]]
@@ -838,66 +838,66 @@ def calculate_B_to_K_star_mu_mu_variables(dataframe):
     dataframe = dataframe.copy()
 
     dataframe["q_squared"] = calculate_invariant_mass_squared_of_two_particles(
-        particle_one_four_momentum_dataframe=positive_muon_measured_four_momentum_dataframe, 
-        particle_two_four_momentum_dataframe=negative_muon_measured_four_momentum_dataframe
+        particle_one_four_momentum_dataframe=positive_lepton_measured_four_momentum_dataframe, 
+        particle_two_four_momentum_dataframe=negative_lepton_measured_four_momentum_dataframe
     )
     dataframe[f"q_squared_mc"] = calculate_invariant_mass_squared_of_two_particles(
-        particle_one_four_momentum_dataframe=positive_muon_generated_four_momentum_dataframe, 
-        particle_two_four_momentum_dataframe=negative_muon_generated_four_momentum_dataframe
+        particle_one_four_momentum_dataframe=positive_lepton_generated_four_momentum_dataframe, 
+        particle_two_four_momentum_dataframe=negative_lepton_generated_four_momentum_dataframe
     )
-    dataframe["costheta_mu"] = calculate_cosine_theta_ell(
-        positive_lepton_four_momentum_dataframe=positive_muon_measured_four_momentum_dataframe, 
-        negative_lepton_four_momentum_dataframe=negative_muon_measured_four_momentum_dataframe, 
+    dataframe[f"cos_theta_{ell}"] = calculate_cosine_theta_ell(
+        positive_lepton_four_momentum_dataframe=positive_lepton_measured_four_momentum_dataframe, 
+        negative_lepton_four_momentum_dataframe=negative_lepton_measured_four_momentum_dataframe, 
         B_meson_four_momentum_dataframe=B_meson_measured_four_momentum_dataframe
     )
-    dataframe[f"costheta_mu_mc"] = calculate_cosine_theta_ell(
-        positive_lepton_four_momentum_dataframe=positive_muon_generated_four_momentum_dataframe, 
-        negative_lepton_four_momentum_dataframe=negative_muon_generated_four_momentum_dataframe, 
+    dataframe[f"cos_theta_{ell}_mc"] = calculate_cosine_theta_ell(
+        positive_lepton_four_momentum_dataframe=positive_lepton_generated_four_momentum_dataframe, 
+        negative_lepton_four_momentum_dataframe=negative_lepton_generated_four_momentum_dataframe, 
         B_meson_four_momentum_dataframe=B_meson_generated_four_momentum_dataframe
     )
-    dataframe["costheta_K"] = calculate_cosine_theta_K(
+    dataframe["cos_theta_k"] = calculate_cosine_theta_K(
         K_four_momentum_dataframe=K_measured_four_momentum_dataframe, 
         K_star_four_momentum_dataframe=K_star_measured_four_momentum_dataframe, 
         B_meson_four_momentum_dataframe=B_meson_measured_four_momentum_dataframe
     )
-    dataframe[f"costheta_K_mc"] = calculate_cosine_theta_K(
+    dataframe[f"cos_theta_K_mc"] = calculate_cosine_theta_K(
         K_four_momentum_dataframe=K_generated_four_momentum_dataframe, 
         K_star_four_momentum_dataframe=K_star_generated_four_momentum_dataframe, 
         B_meson_four_momentum_dataframe=B_meson_generated_four_momentum_dataframe
     )
-    dataframe["coschi"] = calculate_cosine_chi(
+    dataframe["cos_chi"] = calculate_cosine_chi(
         B_meson_four_momentum_dataframe=B_meson_measured_four_momentum_dataframe,
         K_four_momentum_dataframe=K_measured_four_momentum_dataframe,
         K_star_four_momentum_dataframe=K_star_measured_four_momentum_dataframe,
-        positive_lepton_four_momentum_dataframe=positive_muon_measured_four_momentum_dataframe,
-        negative_lepton_four_momentum_dataframe=negative_muon_measured_four_momentum_dataframe,
+        positive_lepton_four_momentum_dataframe=positive_lepton_measured_four_momentum_dataframe,
+        negative_lepton_four_momentum_dataframe=negative_lepton_measured_four_momentum_dataframe,
     )
-    dataframe["coschi_mc"] = calculate_cosine_chi(
+    dataframe["cos_chi_mc"] = calculate_cosine_chi(
         B_meson_four_momentum_dataframe=B_meson_generated_four_momentum_dataframe,
         K_four_momentum_dataframe=K_generated_four_momentum_dataframe,
         K_star_four_momentum_dataframe=K_star_generated_four_momentum_dataframe,
-        positive_lepton_four_momentum_dataframe=positive_muon_generated_four_momentum_dataframe,
-        negative_lepton_four_momentum_dataframe=negative_muon_generated_four_momentum_dataframe,
+        positive_lepton_four_momentum_dataframe=positive_lepton_generated_four_momentum_dataframe,
+        negative_lepton_four_momentum_dataframe=negative_lepton_generated_four_momentum_dataframe,
     )
     dataframe["chi"] = find_chi(
         B_meson_four_momentum_dataframe=B_meson_measured_four_momentum_dataframe,
         K_four_momentum_dataframe=K_measured_four_momentum_dataframe,
         K_star_four_momentum_dataframe=K_star_measured_four_momentum_dataframe,
-        positive_lepton_four_momentum_dataframe=positive_muon_measured_four_momentum_dataframe,
-        negative_lepton_four_momentum_dataframe=negative_muon_measured_four_momentum_dataframe,
+        positive_lepton_four_momentum_dataframe=positive_lepton_measured_four_momentum_dataframe,
+        negative_lepton_four_momentum_dataframe=negative_lepton_measured_four_momentum_dataframe,
     )
     dataframe[f"chi_mc"] = find_chi(
         B_meson_four_momentum_dataframe=B_meson_generated_four_momentum_dataframe,
         K_four_momentum_dataframe=K_generated_four_momentum_dataframe,
         K_star_four_momentum_dataframe=K_star_generated_four_momentum_dataframe,
-        positive_lepton_four_momentum_dataframe=positive_muon_generated_four_momentum_dataframe,
-        negative_lepton_four_momentum_dataframe=negative_muon_generated_four_momentum_dataframe,
+        positive_lepton_four_momentum_dataframe=positive_lepton_generated_four_momentum_dataframe,
+        negative_lepton_four_momentum_dataframe=negative_lepton_generated_four_momentum_dataframe,
     )
-    dataframe["invM_K_pi_shifted"] = calculate_difference_between_invariant_masses_of_K_pi_system_and_K_star(
+    dataframe["inv_M_K_pi_shifted"] = calculate_difference_between_invariant_masses_of_K_pi_system_and_K_star(
         K_four_momentum_dataframe=K_measured_four_momentum_dataframe,
         pi_four_momentum_dataframe=pi_measured_four_momentum_dataframe
     )
-    dataframe["invM_K_pi_shifted_mc"] = calculate_difference_between_invariant_masses_of_K_pi_system_and_K_star(
+    dataframe["inv_M_K_pi_shifted_mc"] = calculate_difference_between_invariant_masses_of_K_pi_system_and_K_star(
         K_four_momentum_dataframe=K_generated_four_momentum_dataframe,
         pi_four_momentum_dataframe=pi_generated_four_momentum_dataframe
     )
@@ -905,256 +905,10 @@ def calculate_B_to_K_star_mu_mu_variables(dataframe):
     return dataframe
 
 
-def calculate_resolution(detector_level_dataframe, name_of_variable):
+if __name__ == "__main__":
 
-    """
-    Calculate the resolution.
+    data = pandas.read_parquet("data/combined.parquet")
 
-    The resolution of a variable is defined as the
-    reconstructed value minus the MC truth value.
+    processed_data = calculate_B_to_K_star_ell_ell_variables(data, ell="mu")
 
-    If the variable is chi, periodicity is accounted for.
-    """
-
-    def apply_periodicity(resolution):
-
-        resolution = resolution.where(resolution < numpy.pi, resolution - 2 * numpy.pi)
-        resolution = resolution.where(resolution > -numpy.pi, resolution + 2 * numpy.pi)
-        return resolution
-    
-    measured = detector_level_dataframe[name_of_variable]
-    generated = detector_level_dataframe[name_of_variable+'_mc']
-    resolution = measured - generated
-
-    if name_of_variable == "chi":
-
-        resolution = apply_periodicity(resolution)
-
-    return resolution
-
-
-def calculate_efficiency(generator_level_series, detector_level_series, num_bins, bounds):
-    
-    """
-    Calculate the efficiency per bin.
-
-    The efficiency of bin i is defined as the number of
-    detector entries in i divided by the number of generator
-    entries in i.
-
-    The error for bin i is calculated as the squareroot of the
-    number of detector entries in i divided by the number of
-    generator entries in i.
-    """
-
-    def make_bins(bounds, num_bins):
-
-        assert len(bounds) == 2
-        bin_edges, bin_width = numpy.linspace(start=bounds[0], stop=bounds[1], num=num_bins+1, retstep=True)
-        bin_middles = numpy.linspace(start=bounds[0]+bin_width/2, stop=bounds[1]-bin_width/2, num=num_bins)
-        return bin_edges, bin_middles
-
-    bin_edges, bin_middles = make_bins(bounds, num_bins)
-
-    generator_level_histogram, _ = numpy.histogram(generator_level_series, bins=bin_edges)
-    detector_level_histogram, _ = numpy.histogram(detector_level_series, bins=bin_edges)
-
-    print("num events generator: ", generator_level_histogram.sum())
-    print("num events detector: ", detector_level_histogram.sum())
-
-    efficiencies = detector_level_histogram / generator_level_histogram
-    errors = numpy.sqrt(detector_level_histogram) / generator_level_histogram
-
-    return bin_middles, efficiencies, errors
-
-
-def bin_in_var(
-    dataframe,
-    name_of_binning_variable, 
-    start, 
-    stop, 
-    num_bins,
-    return_bin_edges=False,
-):
-    
-    bin_edges = numpy.linspace(start=start, stop=stop, num=num_bins+1)
-    bins = pandas.cut(dataframe[name_of_binning_variable], bin_edges, include_lowest=True) # the interval each event falls into
-    groupby_binned = dataframe.groupby(bins, observed=False)
-
-    if return_bin_edges:
-        return groupby_binned, bin_edges
-    return groupby_binned
-
-
-def calc_bin_middles(start, stop, num_bins):
-
-    bin_edges, step = numpy.linspace(
-        start=start,
-        stop=stop,
-        num=num_bins+1,
-        retstep=True,
-    )
-    bin_middles = bin_edges[:-1] + step/2 
-    return bin_middles
-
-
-def calc_afb_of_q_sq(dataframe, num_bins, start, stop):
-
-    """
-    Calcuate Afb as a function of q squared.
-    Afb is the forward-backward asymmetry.
-    """
-
-    def calc_num_forward(df):
-
-        return df["costheta_mu"][(df["costheta_mu"] > 0) & (df["costheta_mu"] < 1)].count()
-    
-    def calc_num_backward(df):
-
-        return df["costheta_mu"][(df["costheta_mu"] > -1) & (df["costheta_mu"] < 0)].count()
-
-    def calc_afb(df):
-
-        f = calc_num_forward(df)
-        b = calc_num_backward(df)
-        return (f - b) / (f + b)
-
-    def calc_afb_err(df):
-
-        f = calc_num_forward(df)
-        b = calc_num_backward(df)
-        f_stdev = numpy.sqrt(f)
-        b_stdev = numpy.sqrt(b)
-        return 2*f*b / (f+b)**2 * numpy.sqrt((f_stdev/f)**2 + (b_stdev/b)**2) # this is stdev?
-
-    groupby_binned = bin_in_var(
-        dataframe, 
-        "q_squared", 
-        start,
-        stop,
-        num_bins
-    )
-    
-    afbs = groupby_binned.apply(calc_afb)
-    errs = groupby_binned.apply(calc_afb_err)
-    bin_middles = calc_bin_middles(start, stop, num_bins)
-
-    return bin_middles, afbs, errs
-
-
-def calc_afb_of_q_sq_over_dc9(dataframe, num_bins, start, stop):
-
-    dc9_values = []
-    bin_mids_over_dc9 = []
-    afbs_over_dc9 = []
-    afb_errs_over_dc9 = []
-
-    for dc9, df in (dataframe.groupby("dc9")):
-
-        dc9_values.append(dc9)
-        bin_mids, afbs, afb_errs = calc_afb_of_q_sq(df, num_bins, start, stop)
-        bin_mids_over_dc9.append(bin_mids)
-        afbs_over_dc9.append(afbs)
-        afb_errs_over_dc9.append(afb_errs)
-
-    return dc9_values, bin_mids_over_dc9, afbs_over_dc9, afb_errs_over_dc9
-
-
-def calc_s5_of_q_sq(dataframe, num_bins, start, stop):
-    
-    def calc_num_forward(df):
-
-        cos_theta_k = df["costheta_K"]
-        chi = df["chi"]
-        
-        return df[
-            (((cos_theta_k > 0) & (cos_theta_k < 1)) & ((chi > 0) & (chi < numpy.pi/2)))
-            | (((cos_theta_k > 0) & (cos_theta_k < 1)) & ((chi > 3*numpy.pi/2) & (chi < 2*numpy.pi)))
-            | (((cos_theta_k > -1) & (cos_theta_k < 0)) & ((chi > numpy.pi/2) & (chi < 3*numpy.pi/2)))
-        ].count().min()
-
-    def calc_num_backward(df):
-
-        cos_theta_k = df["costheta_K"]
-        chi = df["chi"]
-        
-        return df[
-            (((cos_theta_k > 0) & (cos_theta_k < 1)) & ((chi > numpy.pi/2) & (chi < 3*numpy.pi/2)))
-            | (((cos_theta_k > -1) & (cos_theta_k < 0)) & ((chi > 0) & (chi < numpy.pi/2)))
-            | (((cos_theta_k > -1) & (cos_theta_k < 0)) & ((chi > 3*numpy.pi/2) & (chi < 2*numpy.pi)))
-        ].count().min()
-
-    def calc_s5(df):
-
-        f = calc_num_forward(df)
-        b = calc_num_backward(df)
-
-        try: 
-
-            s5 = 4/3 * (f - b) / (f + b)
-
-        except ZeroDivisionError:
-
-            print("S5 calculation: division by 0, returning nan")
-            s5 = numpy.nan
-
-        return s5
-
-    def calc_s5_err(df):
-
-        """
-        Calculate the error of S_5.
-
-        The error is calculated by assuming the forward and backward
-        regions have uncorrelated Poisson errors and propagating
-        the errors.
-        """
-
-        f = calc_num_forward(df)
-        b = calc_num_backward(df)
-
-        f_stdev = numpy.sqrt(f)
-        b_stdev = numpy.sqrt(b)
-
-        try: 
-
-            err =  4/3 * 2*f*b / (f+b)**2 * numpy.sqrt((f_stdev/f)**2 + (b_stdev/b)**2) # this is stdev?
-
-        except ZeroDivisionError:
-
-            print("S5 error calculation: division by 0, returning nan")
-            err = numpy.nan
-        
-        return err
-
-    groupby_binned = bin_in_var(
-        dataframe, 
-        "q_squared", 
-        start,
-        stop,
-        num_bins,     
-    )
-    
-    s5s = groupby_binned.apply(calc_s5)
-    errs = groupby_binned.apply(calc_s5_err)
-    bin_middles = calc_bin_middles(start, stop, num_bins)
-
-    return bin_middles, s5s, errs
-
-
-def calc_s5_of_q_sq_over_dc9(dataframe, num_bins, start, stop):
-
-    dc9_values = []
-    bin_mids_over_dc9 = []
-    s5s_over_dc9 = []
-    s5_errs_over_dc9 = []
-
-    for dc9, df in (dataframe.groupby("dc9")):
-
-        dc9_values.append(dc9)
-        bin_middles, s5s, s5_errs = calc_s5_of_q_sq(df, num_bins, start, stop)
-        bin_mids_over_dc9.append(bin_middles)
-        s5s_over_dc9.append(s5s)
-        s5_errs_over_dc9.append(s5_errs)
-
-    return dc9_values, bin_mids_over_dc9, s5s_over_dc9, s5_errs_over_dc9
+    processed_data.to_parquet("data/combined_processed.parquet")

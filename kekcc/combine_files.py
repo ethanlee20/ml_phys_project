@@ -17,11 +17,11 @@ if __name__ == "__main__":
 
         pbar.set_postfix_str(path_to_metadata.name)
 
-        path_to_data_file = path_to_metadata.parent.joinpath(f"{path_to_metadata.stem}_re.parquet")
-
         metadata = pandas.read_json(path_to_metadata, typ="series")
+        path_to_data_file = path_to_metadata.parent.joinpath(f"{path_to_metadata.stem}_re.parquet")
         data = pandas.read_parquet(path_to_data_file)
 
+        data = data.assign(**metadata[["channel", "dc7", "dc9", "dc10"]])
         trial_tuple = (metadata["trial"], metadata["sub_trial"])
 
         list_of_dataframes.append(data)
@@ -33,6 +33,8 @@ if __name__ == "__main__":
         names=["trial", "sub_trial"], 
         verify_integrity=True
     )
+
+    data = data.sort_index()
 
     data.to_parquet("data/combined.parquet")
         
