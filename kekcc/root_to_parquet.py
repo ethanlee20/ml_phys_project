@@ -27,7 +27,7 @@ def open_output_root_file(path, tree_names=["gen", "det"]):
 
 if __name__ == "__main__":
 
-    data_dir = pathlib.Path("data/kekcc_output/2025-12-23/")
+    data_dir = pathlib.Path("data/kekcc_output/2025-12-31/")
     list_of_data_file_paths = list(data_dir.glob("*.root"))
 
     for path in (pbar:=tqdm.tqdm(list_of_data_file_paths)):

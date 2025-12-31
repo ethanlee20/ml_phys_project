@@ -73,18 +73,18 @@ if __name__ == "__main__":
 
     ### Parameters ###
     e_or_mu = "mu"
-    trial_range = range(-1, 0) # each trial corresponds with a wilson coefficient sample
-    sub_trial_range = range(0, 2) # split up large jobs (repeats per trial)
-    events_per_sub_trial = 25_000
-    # path_to_wilson_coefficient_samples = Path("../data/sampled_wilson_coefficients.parquet")
+    trial_range = range(210, 310) # each trial corresponds with a wilson coefficient sample
+    sub_trial_range = range(0, 1) # split up large jobs (repeats per trial)
+    events_per_sub_trial = 1_000
+    path_to_wilson_coefficient_samples = Path("../data/sampled_wilson_coefficients.parquet")
     path_to_output_dir = Path("../data/kekcc_output/")
     ###################
 
-    # sampled_wilson_coefficients_dataframe = read_parquet(path_to_wilson_coefficient_samples)
+    sampled_wilson_coefficients_dataframe = read_parquet(path_to_wilson_coefficient_samples)
 
     for trial, sub_trial in product(trial_range, sub_trial_range):
 
-        metadata = Series({"dc7":0.0, "dc9":0.0, "dc10":0.0}) # get_wilson_coefficients_series(sampled_wilson_coefficients_dataframe, trial)
+        metadata = get_wilson_coefficients_series(sampled_wilson_coefficients_dataframe, trial) # Series({"dc7":0.0, "dc9":0.0, "dc10":0.0}) 
         metadata["trial"] = trial
         metadata["sub_trial"] = sub_trial
         metadata["channel"] = e_or_mu
