@@ -1,7 +1,6 @@
 
 from math import pi
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas
 import skimage

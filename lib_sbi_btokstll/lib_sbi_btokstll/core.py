@@ -3,6 +3,7 @@ from unittest import TestCase, main
 
 import numpy
 import pandas
+import torch
 
 
 class Interval:
@@ -97,6 +98,63 @@ def apply_offline_cuts(
     dataframe = dataframe[dataframe["Mbc"] > mbc_lower_bound]
     dataframe = dataframe[(dataframe["deltaE"] > deltaE_keep_interval.lb) & (dataframe["deltaE"] < deltaE_keep_interval.ub)]
     return dataframe.copy()
+
+
+def safer_convert_to_int(x):
+
+    assert x.is_integer()
+    return int(x)
+
+
+class TestSaferConvertToInt(TestCase):
+
+    def test_basic(self):
+        self.assertIs(safer_convert_to_int(3.0), 3)
+
+    def test_non_integer(self):
+        with self.assertRaises(AssertionError):
+            safer_convert_to_int(3.2)
+
+
+    
+def are_instance(objects:list, classinfo):
+
+    assert isinstance(objects, list)
+
+    for obj in objects:
+        if not isinstance(obj, classinfo):
+            return False
+    return True
+
+
+class TestAreInstance(TestCase):
+
+    def test_basic_are_instance(self):
+
+        self.assertTrue(are_instance([1,2,3], int))
+        self.assertFalse(are_instance([1,2,3], float))
+
+
+def torch_tensor_from_pandas(dataframe):
+
+    """
+    Convert a pandas dataframe to a torch tensor.
+    """
+
+    tensor = torch.from_numpy(dataframe.to_numpy())
+    return tensor
+
+
+def to_torch_tensor(x):
+
+    if isinstance(x, pandas.DataFrame|pandas.Series):
+        return torch_tensor_from_pandas(x)
+    elif isinstance(x, numpy.ndarray):
+        return torch.from_numpy(x)
+    elif isinstance(x, torch.Tensor):
+        return x
+    else: raise ValueError(f"Unsupported type: {type(x)}")
+
 
 
 if __name__ == "__main__":

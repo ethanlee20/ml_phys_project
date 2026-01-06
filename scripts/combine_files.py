@@ -4,6 +4,8 @@ import pathlib
 import tqdm
 import pandas
 
+from lib_sbi_btokstll.core import safer_convert_to_int
+
 
 if __name__ == "__main__":
 
@@ -23,6 +25,7 @@ if __name__ == "__main__":
 
         data = data.assign(**metadata[["channel", "dc7", "dc9", "dc10"]])
         trial_tuple = (metadata["trial"], metadata["sub_trial"])
+        trial_tuple = tuple(safer_convert_to_int(x) for x in trial_tuple)
 
         list_of_dataframes.append(data)
         list_of_trial_tuples.append(trial_tuple)
