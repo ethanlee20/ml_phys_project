@@ -93,6 +93,12 @@ if __name__ == "__main__":
     for trial, sub_trial in product(trial_range, sub_trial_range):
 
         metadata = wc_samples.loc[trial]
+        metadata["interval_dc7_lb"] = interval_dc7.lb
+        metadata["interval_dc7_ub"] = interval_dc7.ub
+        metadata["interval_dc9_lb"] = interval_dc9.lb
+        metadata["interval_dc9_ub"] = interval_dc9.ub
+        metadata["interval_dc10_lb"] = interval_dc10.lb
+        metadata["interval_dc10_ub"] = interval_dc10.ub
         metadata["trial"] = trial
         metadata["sub_trial"] = sub_trial
         metadata["channel"] = e_or_mu
