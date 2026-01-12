@@ -29,31 +29,6 @@ class TestInterval(TestCase):
             Interval(0, -10)
 
 
-def sample_from_uniform_wilson_coefficient_prior(
-    interval_dc7:Interval,
-    interval_dc9:Interval,
-    interval_dc10:Interval,
-    n_samples:int,
-    rng_seed:int=42,
-):
-  
-    rng = numpy.random.default_rng(rng_seed)
-
-    intervals = {
-        "dc7": interval_dc7,
-        "dc9": interval_dc9,
-        "dc10": interval_dc10
-    }
-
-    samples = {
-        dci : rng.uniform(interval.lb, interval.ub, n_samples)
-        for dci, interval in intervals.items() 
-    }
-
-    df_samples = pandas.DataFrame(samples)
-    return df_samples
-
-
 class TestSampleFromUniformWilsonCoefficientPrior(TestCase):
 
     def setUp(self):

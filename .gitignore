@@ -3,6 +3,7 @@
 *.log
 *.dec
 *.json
+*.jsonl
 *.pdf
 __pycache__
 .env/

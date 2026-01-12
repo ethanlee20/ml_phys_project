@@ -8,7 +8,7 @@ import pandas
 import torch
 import matplotlib.pyplot as plt
 
-from lib_sbi_btokstll.core import are_instance, to_torch_tensor
+from lib_sbi_btokstll.util import are_instance, to_torch_tensor
 
 
 def select_device():
@@ -32,10 +32,15 @@ def get_model_current_device(model):
 def save_torch_model(model, path):
     torch.save(model.state_dict(), path)
 
+    
+def open_model_state_dict(path):
+    state_dict = torch.load(path, weights_only=True)
+    return state_dict
 
-class Dataset(torch.utils.data.Dataset):
 
-    def __init__(self, features, labels, dtype=None):
+class Dataset:
+
+    def __init__(self, features, labels):
 
         features = to_torch_tensor(features)
         labels = to_torch_tensor(labels)
@@ -46,9 +51,9 @@ class Dataset(torch.utils.data.Dataset):
         self.features = features
         self.labels = labels
 
-        if dtype is not None:
-            self.features = features.to(dtype)
-            self.labels = labels.to(dtype)
+    def to(self, arg):
+
+        return Dataset(self.features.to(arg), self.labels.to(arg))
 
     def __len__(self): 
 
@@ -286,7 +291,7 @@ class Loss_Table:
 class Trainer:
 
     available_optimizers = {"adam": torch.optim.Adam}
-    available_loss_fns = {"mse": torch.nn.MSELoss}
+    available_loss_fns = {"mse": torch.nn.MSELoss, "cross_entropy": torch.nn.CrossEntropyLoss}
     available_lr_schedulers = {"reduce_lr_on_plateau": torch.optim.lr_scheduler.ReduceLROnPlateau, "none":None}
 
     def __init__(self, dataset_train, dataset_eval, model, params):
@@ -306,7 +311,7 @@ class Trainer:
             **self.params["optimizer_params"] 
         )
 
-        self.loss_fn = self.available_loss_fns[self.params["loss_fn"]]()
+        self.loss_fn = self.available_loss_fns[self.params["loss_fn"]](**self.params["loss_fn_params"])
 
         self.lr_scheduler = self.available_lr_schedulers[self.params["lr_scheduler"]]
         if self.lr_scheduler is not None: 
@@ -318,6 +323,8 @@ class Trainer:
         self.loss_table = Loss_Table()
 
         self.setup_save_dir()
+
+        self.save_params_json()
 
     def print_current_epoch_loss(self):
         
@@ -351,9 +358,14 @@ class Trainer:
 
     def save_params_json(self):
 
+        params_to_save = self.params.copy()
+
+        try: params_to_save["loss_fn_params"]["weight"] = params_to_save["loss_fn_params"]["weight"].tolist()
+        except KeyError: pass
+
         path = self.save_dir().joinpath("params.json")
         with open(path, "x") as file:
-            json.dump(self.params, file, sort_keys=False, indent=4)
+            json.dump(params_to_save, file, sort_keys=False, indent=4)
 
     def save_loss_table(self):
 
@@ -377,7 +389,7 @@ class Trainer:
             [self.loss_table.train_losses, self.loss_table.eval_losses], 
             ["train", "eval"]
         ):
-            ax.plot(self.loss_table.epochs, losses, label)
+            ax.plot(self.loss_table.epochs, losses, label=label)
         
         ax.set_xlabel("Epoch")
         ax.set_ylabel(f"Loss ({self.params["loss_fn"]})")
@@ -400,7 +412,7 @@ class Trainer:
                 self.lr_scheduler
             )
 
-            self.loss_table.add_to_table(epoch, train_loss, eval_loss)
+            self.loss_table.add_to_table(epoch, train_loss.item(), eval_loss.item())
         
             if verbosity >= 1:
                 self.print_current_epoch_loss()

@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
         for trial in trials:
 
-            trial_data = data.loc[trial, :, "gen"]
+            trial_data = data.xs((trial, "gen"), level=("trial", "sim_type"))
 
             label = one_row_dataframe_to_series(trial_data[["dc7", "dc9", "dc10"]].drop_duplicates())
             lab_color = label_to_color(**label)
@@ -62,6 +62,6 @@ if __name__ == "__main__":
         
     axs.flat[3].legend(ncols=1)
 
-    plt.savefig("data/plots/distribution.png", bbox_inches="tight")
+    plt.savefig("data/plots/distributions.png", bbox_inches="tight")
 
 

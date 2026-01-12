@@ -1,6 +1,4 @@
 
-import pathlib
-
 import numpy
 import pandas
 
@@ -903,12 +901,3 @@ def calculate_B_to_K_star_ell_ell_variables(dataframe, ell):
     )
 
     return dataframe
-
-
-if __name__ == "__main__":
-
-    data = pandas.read_parquet("data/combined.parquet")
-
-    processed_data = calculate_B_to_K_star_ell_ell_variables(data, ell="mu")
-
-    processed_data.to_parquet("data/combined_processed.parquet")

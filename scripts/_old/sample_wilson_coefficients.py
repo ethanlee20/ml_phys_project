@@ -1,16 +1,11 @@
 
 from pathlib import Path
 
-from lib_sbi_btokstll import Interval, sample_from_uniform_wilson_coefficient_prior
+from lib_sbi_btokstll.util import Interval, sample_from_uniform_wilson_coefficient_prior
+from lib_sbi_btokstll.constants import delta_wilson_coefficient_intervals
 
 
 ### Parameters ###
-
-wilson_coefficient_intervals = {
-    "dc7": Interval(-0.5, 0.5),
-    "dc9": Interval(-2, 1),
-    "dc10": Interval(-1, 1)
-}
 
 n_samples = 10_000_000
 rng_seed = 42
@@ -19,9 +14,9 @@ rng_seed = 42
 ### Sampling ###
 
 sampled_wilson_coefficients_dataframe = sample_from_uniform_wilson_coefficient_prior(
-    interval_dc7=wilson_coefficient_intervals["dc7"],
-    interval_dc9=wilson_coefficient_intervals["dc9"],
-    interval_dc10=wilson_coefficient_intervals["dc10"],
+    interval_dc7=delta_wilson_coefficient_intervals["dc7"],
+    interval_dc9=delta_wilson_coefficient_intervals["dc9"],
+    interval_dc10=delta_wilson_coefficient_intervals["dc10"],
     n_samples=n_samples,
     rng_seed=rng_seed
 )

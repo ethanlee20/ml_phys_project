@@ -7,7 +7,9 @@ from itertools import product
 
 from pandas import Series, read_parquet
 
-### Helpers ###
+from lib_sbi_btokstll.data import sample_from_uniform_wilson_coefficient_prior
+from lib_sbi_btokstll.util import Interval
+
 
 def make_dec_file(e_or_mu, dc7, dc9, dc10, file_path):
 
@@ -48,6 +50,8 @@ def make_dec_file(e_or_mu, dc7, dc9, dc10, file_path):
 
 def make_file_paths(trial, sub_trial, dc7, dc9, dc10, path_to_output_dir):
 
+    path_to_output_dir = Path(path_to_output_dir)
+
     file_name_base = f"trial_{trial}_{sub_trial}_dc7_{dc7:.2f}_dc9_{dc9:.2f}_dc10_{dc10:.2f}"
     file_names = {
         "metadata" : f"{file_name_base}.json",
@@ -63,28 +67,32 @@ def make_file_paths(trial, sub_trial, dc7, dc9, dc10, path_to_output_dir):
     return file_paths
 
 
-def get_wilson_coefficients_series(sampled_wilson_coefficients_dataframe, trial):
-
-    wilson_coefficients_series = sampled_wilson_coefficients_dataframe.loc[trial]
-    return wilson_coefficients_series
-
-
 if __name__ == "__main__":
 
     ### Parameters ###
     e_or_mu = "mu"
-    trial_range = range(210, 310) # each trial corresponds with a wilson coefficient sample
+    trial_range = range(10_000, 10_200) # each trial corresponds with a wilson coefficient sample
     sub_trial_range = range(0, 1) # split up large jobs (repeats per trial)
     events_per_sub_trial = 1_000
-    path_to_wilson_coefficient_samples = Path("../data/sampled_wilson_coefficients.parquet")
-    path_to_output_dir = Path("../data/kekcc_output/")
+    interval_dc7 = Interval(0, 0)
+    interval_dc9 = Interval(-2, 1)
+    interval_dc10 = Interval(0, 0)
+    rng_seed = None
+    path_to_output_dir = "../../data/kekcc_output/"
     ###################
 
-    sampled_wilson_coefficients_dataframe = read_parquet(path_to_wilson_coefficient_samples)
+    wc_samples = sample_from_uniform_wilson_coefficient_prior(
+        interval_dc7=interval_dc7,  
+        interval_dc9=interval_dc9,
+        interval_dc10=interval_dc10,
+        n_samples=len(trial_range),
+        rng_seed=rng_seed
+    )
+    wc_samples.index = trial_range
 
     for trial, sub_trial in product(trial_range, sub_trial_range):
 
-        metadata = get_wilson_coefficients_series(sampled_wilson_coefficients_dataframe, trial) # Series({"dc7":0.0, "dc9":0.0, "dc10":0.0}) 
+        metadata = wc_samples.loc[trial]
         metadata["trial"] = trial
         metadata["sub_trial"] = sub_trial
         metadata["channel"] = e_or_mu
