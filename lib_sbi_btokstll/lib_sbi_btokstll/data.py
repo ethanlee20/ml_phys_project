@@ -1,33 +1,34 @@
 
-from itertools import product
 
-from numpy.random import default_rng
+import numpy 
+import pandas
 from pandas import DataFrame, Series, cut
+import torch
+import uproot
 
-from lib_sbi_btokstll.util import to_torch_tensor, Interval
-from lib_sbi_btokstll.constants import trial_ranges, names_of_features
+from lib_sbi_btokstll.constants import trial_ranges
 
 
-def sample_from_uniform_wilson_coefficient_prior(
-    interval_dc7:Interval,
-    interval_dc9:Interval,
-    interval_dc10:Interval,
-    n_samples:int,
-    rng_seed=None,
-):
-  
-    rng = default_rng(rng_seed)
-    intervals = {
-        "dc7": interval_dc7,
-        "dc9": interval_dc9,
-        "dc10": interval_dc10
-    }
-    samples = {
-        dci : rng.uniform(interval.lb, interval.ub, n_samples)
-        for dci, interval in intervals.items() 
-    }
-    df_samples = DataFrame(samples)
-    return df_samples
+def torch_tensor_from_pandas(dataframe):
+
+    """
+    Convert a pandas dataframe to a torch tensor.
+    """
+
+    tensor = torch.from_numpy(dataframe.to_numpy())
+    return tensor
+
+
+def to_torch_tensor(x):
+
+    if isinstance(x, DataFrame|Series):
+        return torch_tensor_from_pandas(x)
+    elif isinstance(x, numpy.ndarray):
+        return torch.from_numpy(x)
+    elif isinstance(x, torch.Tensor):
+        return x
+    else: raise ValueError(f"Unsupported type: {type(x)}")
+
 
 
 def get_split(trial):

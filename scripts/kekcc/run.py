@@ -5,10 +5,30 @@ import subprocess
 from pathlib import Path
 from itertools import product
 
-from pandas import Series, read_parquet
+from pandas import DataFrame, Interval
+from numpy.random import default_rng
 
-from lib_sbi_btokstll.data import sample_from_uniform_wilson_coefficient_prior
-from lib_sbi_btokstll.util import Interval
+
+def sample_from_uniform_wilson_coefficient_prior(
+    interval_dc7:Interval,
+    interval_dc9:Interval,
+    interval_dc10:Interval,
+    n_samples:int,
+    rng_seed=None,
+):
+  
+    rng = default_rng(rng_seed)
+    intervals = {
+        "dc7": interval_dc7,
+        "dc9": interval_dc9,
+        "dc10": interval_dc10
+    }
+    samples = {
+        dci : rng.uniform(interval.left, interval.right, n_samples)
+        for dci, interval in intervals.items() 
+    }
+    df_samples = DataFrame(samples)
+    return df_samples
 
 
 def make_dec_file(e_or_mu, dc7, dc9, dc10, file_path):
@@ -71,7 +91,7 @@ if __name__ == "__main__":
 
     ### Parameters ###
     e_or_mu = "mu"
-    trial_range = range(10_000, 10_200) # each trial corresponds with a wilson coefficient sample
+    trial_range = range(310, 320) # each trial corresponds with a wilson coefficient sample
     sub_trial_range = range(0, 1) # split up large jobs (repeats per trial)
     events_per_sub_trial = 1_000
     interval_dc7 = Interval(0, 0)
@@ -93,12 +113,12 @@ if __name__ == "__main__":
     for trial, sub_trial in product(trial_range, sub_trial_range):
 
         metadata = wc_samples.loc[trial]
-        metadata["interval_dc7_lb"] = interval_dc7.lb
-        metadata["interval_dc7_ub"] = interval_dc7.ub
-        metadata["interval_dc9_lb"] = interval_dc9.lb
-        metadata["interval_dc9_ub"] = interval_dc9.ub
-        metadata["interval_dc10_lb"] = interval_dc10.lb
-        metadata["interval_dc10_ub"] = interval_dc10.ub
+        metadata["interval_dc7_lb"] = interval_dc7.left
+        metadata["interval_dc7_ub"] = interval_dc7.right
+        metadata["interval_dc9_lb"] = interval_dc9.left
+        metadata["interval_dc9_ub"] = interval_dc9.right
+        metadata["interval_dc10_lb"] = interval_dc10.left
+        metadata["interval_dc10_ub"] = interval_dc10.right
         metadata["trial"] = trial
         metadata["sub_trial"] = sub_trial
         metadata["channel"] = e_or_mu
