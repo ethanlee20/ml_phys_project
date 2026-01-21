@@ -8,7 +8,8 @@ import pandas
 import torch
 import matplotlib.pyplot as plt
 
-from lib_sbi_btokstll.util import are_instance, to_torch_tensor
+from lib_sbi_btokstll.util import are_instance
+from lib_sbi_btokstll.data import to_torch_tensor
 
 
 def select_device():
@@ -381,7 +382,7 @@ class Trainer:
         )
         save_torch_model(self.model, path)
 
-    def plot_loss(self): 
+    def plot_loss(self, yscale="log"): 
 
         _, ax = plt.subplots()
 
@@ -392,6 +393,7 @@ class Trainer:
             ax.plot(self.loss_table.epochs, losses, label=label)
         
         ax.set_xlabel("Epoch")
+        ax.set_yscale(yscale)
         ax.set_ylabel(f"Loss ({self.params["loss_fn"]})")
         ax.legend()
         plt.savefig(self.save_dir().joinpath("loss.png"), bbox_inches="tight")

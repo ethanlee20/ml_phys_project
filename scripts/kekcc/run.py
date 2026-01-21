@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     ### Parameters ###
     e_or_mu = "mu"
-    trial_range = range(310, 320) # each trial corresponds with a wilson coefficient sample
+    trial_range = range(520, 600) # each trial corresponds with a wilson coefficient sample
     sub_trial_range = range(0, 1) # split up large jobs (repeats per trial)
     events_per_sub_trial = 1_000
     interval_dc7 = Interval(0, 0)

@@ -231,28 +231,27 @@ def create_variable_lists():
     return B0_vars
 
 
-def save_output(B0_vars):
+def save_output(B0_vars, sim_level):
 
-    for level in ("gen", "det"):
-
-        ma.variablesToNtuple(
-            decayString=f"B0:{level}",
-            variables=B0_vars,
-            filename=output_filepath,
-            treename=level,
-            path=main,
-        )
+    ma.variablesToNtuple(
+        decayString=f"B0:{sim_level}",
+        variables=B0_vars,
+        filename=output_filepath,
+        treename=sim_level,
+        path=main,
+    )
 
 
 append_global_tag()
 define_aliases()
 input_to_the_path()
 reconstruct_generator_level()
-reconstruct_detector_level()
-treefit()
-rest_of_event()
+# reconstruct_detector_level()
+# treefit()
+# rest_of_event()
 # printMCParticles()
 B0_vars = create_variable_lists()
-save_output(B0_vars)
+save_output(B0_vars, "gen")
+# save_output(B0_vars, "det")
 b2.process(main)
 print(b2.statistics)
