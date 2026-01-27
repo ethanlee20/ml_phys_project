@@ -82,7 +82,7 @@ def normalize_using_reference_data(data:DataFrame|Series, reference:DataFrame|Se
     return normalized
 
 
-def open_output_root_file(path, tree_names=["gen", "det"]):
+def open_output_root_file(path, unwanted_keys=["persistent;1", "persistent;2"]):
     
     """
     Open an output root file as a pandas dataframe.
@@ -92,12 +92,17 @@ def open_output_root_file(path, tree_names=["gen", "det"]):
     """
 
     with uproot.open(path) as file:
+
+        keys = [
+            key.split(";")[0] for key in file.keys() 
+            if key not in unwanted_keys
+        ]
         list_of_dataframes = [
-            file[name].arrays(library="pd") 
-            for name in tree_names
+            file[key].arrays(library="pd") 
+            for key in keys
         ]
 
-    final_dataframe = pandas.concat(list_of_dataframes, keys=tree_names, names=["sim_type",])
+    final_dataframe = pandas.concat(list_of_dataframes, keys=keys, names=["sim_type",])
     return final_dataframe
 
 

@@ -2,6 +2,8 @@
 import torch
 from torch.nn.functional import log_softmax
 
+from lib_sbi_btokstll.data import to_torch_tensor
+
 
 class Predictor:
 
@@ -22,6 +24,22 @@ class Predictor:
             set_logits = torch.sum(event_log_probs, dim=1)
             set_log_probs = log_softmax(set_logits, dim=1)
             return set_log_probs
+        
+    def calc_expected_values(self, set_log_probs, bin_map):
+
+        bin_shift = 5
+        bin_map = to_torch_tensor(bin_map)
+        bin_map = bin_map.to(self.device)
+        set_log_probs = set_log_probs.to(self.device)
+        
+        def calc_expectation(log_probs):
+            log_bin_map = torch.log(bin_map + bin_shift)
+            expectation = torch.exp(torch.logsumexp(log_bin_map + log_probs, dim=0)) - bin_shift
+            return expectation
+    
+        with torch.no_grad():
+            expected_values = torch.tensor([calc_expectation(log_p) for log_p in set_log_probs])
+            return expected_values
     
     
 

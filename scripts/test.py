@@ -18,23 +18,23 @@ from lib_sbi_btokstll.models import MLP
 if __name__ == "__main__":
 
     train = False
-    name = "test_dc9_only_5_bins"
+    name = "test_dc9_30_bins"
     sim_type = "gen"
     label_name = "dc9"
     feature_names = ["q_squared", "cos_theta_mu", "cos_theta_k", "chi"]
     dc9_interval = (-2, 1)
-    num_bins = 5
+    num_bins = 30
     device = select_device()
     optimizer = "adam"
     loss_fn = "cross_entropy"
     learn_rate = 3e-4
     learn_rate_sched = "reduce_lr_on_plateau"
-    learn_rate_sched_reduce_factor = 0.98
+    learn_rate_sched_reduce_factor = 0.95
     learn_rate_sched_patience = 0
     learn_rate_sched_threshold = 0
     learn_rate_sched_eps = 0
-    epochs = 300
-    epochs_checkpoint = 100
+    epochs = 250
+    epochs_checkpoint = 20
     batch_size_train = 10_000
     batch_size_eval = 10_000
     path_to_parent_dir = "data/models"
@@ -50,7 +50,10 @@ if __name__ == "__main__":
 
     bins = numpy.linspace(*dc9_interval, num_bins+1)
     binned_labels = bin(data[label_name], bins)
-    
+    bin_map = binned_labels[["bin_index", "bin_mid"]].drop_duplicates(subset="bin_index").sort_values("bin_index")["bin_mid"]
+    # breakpoint()
+    assert len(bin_map) == num_bins
+
     normalized_features = normalize_using_reference_data(
         data[feature_names], 
         data[feature_names].xs("train", level="split")
@@ -64,6 +67,9 @@ if __name__ == "__main__":
         features=normalized_features.xs("val", level="split").astype("float32"), 
         labels=binned_labels.xs("val", level="split")["bin_index"]
     )
+
+    print(f"Num train examples: {len(dataset_train)}")
+    print(f"Num validation examples: {len(dataset_val)}")
         
     loss_label_weights = calculate_discrete_label_weights_uniform_prior(
         binned_labels.xs("train", level="split")["bin_index"]
@@ -97,7 +103,7 @@ if __name__ == "__main__":
         path_to_final_model_state_dict = Path(path_to_parent_dir).joinpath(f"{name}/final.pt")
         model.load_state_dict(open_model_state_dict(path_to_final_model_state_dict))
 
-    for eval_sets_split in ["train", "val"]:
+    for eval_sets_split in ["val",]:
 
         eval_sets_features = numpy.concatenate(
             [
@@ -111,9 +117,10 @@ if __name__ == "__main__":
 
         predictor = Predictor(model, eval_sets_dataset.features, device)
         log_probs = predictor.calc_log_probs()
-
-        print(log_probs)
-        print(eval_sets_labels)
+        expected_values = predictor.calc_expected_values(log_probs, bin_map)
+        breakpoint()
+        # print(log_probs)
+        # print(eval_sets_labels)
 
         plt.style.use("dark_background")
         plt.rcParams.update({
@@ -121,23 +128,30 @@ if __name__ == "__main__":
             "text.usetex": True,
             "font.family": "serif",
             "font.serif": "Computer Modern",
+
         })
-
-        def bars(ax, x, y, color):
-            ax.hlines(y, xmin=x-0.5, xmax=x+0.5, color=color)
-
-        fig, ax = plt.subplots()
-        norm = Normalize(vmin=0, vmax=num_bins-1)
-        cmap = mpl.colormaps["viridis"]
-        for l, label in zip(log_probs, eval_sets_labels["bin_index"].to_list()):
+        alpha = 0.85
+        fig, axs = plt.subplots(1, 2, figsize=(7,3), layout="constrained")
+        fig.get_layout_engine().set(wspace=0.06)
+        ax_dist = axs[0]
+        ax_expected = axs[1]
+        # norm = Normalize(vmin=-0.5, vmax=0.5)
+        norm = CenteredNorm(vcenter=0, halfrange=2)
+        cmap = mpl.colormaps["coolwarm"]
+        for l, label in zip(log_probs, eval_sets_labels["original"].to_list()):
             color = cmap(norm(label))
-            # bars(ax, numpy.array(range(num_bins)), l.cpu(), color=color)
-            ax.plot(range(num_bins), l.cpu(), color=color)
-        ax.set_xticks(range(num_bins))
-        cbar = plt.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax)
-        cbar.set_ticks(range(num_bins))
-        cbar.set_label(r"Actual $\delta C_9$ Bin", fontsize=15)
-        ax.set_xlabel(r"$\delta C_9$ Bin", fontsize=15)
-        ax.set_ylabel(r"$\log P(\delta C_9 \, | \, \textrm{dataset})$", fontsize=15)
+            ax_dist.plot(bin_map, l.cpu(), color=color, alpha=alpha)
+        ax_expected.plot([-1.9, 0.9], [-1.9, 0.9], color="grey", zorder=-10, alpha=0.5, linestyle="--")
+        ax_expected.scatter(eval_sets_labels["original"], expected_values, color=cmap(norm(eval_sets_labels["original"])), alpha=alpha)
+        ax_dist.set_xticks([-2, -1, 0, 1])
+        ax_expected.set_xticks([-2, -1, 0, 1])
+        ax_expected.set_yticks([-2, -1, 0, 1])
+        # cbar = plt.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax_dist)
+        # cbar.set_ticks(range(num_bins))
+        # cbar.set_label(r"Actual $\delta C_9$ Bin", fontsize=15)
+        ax_dist.set_xlabel(r"$\delta C_9$", fontsize=13)
+        ax_dist.set_ylabel(r"$\log P(\delta C_9 \, | \, \textrm{dataset})$", fontsize=13)
+        ax_expected.set_xlabel(r"Actual $\delta C_9$", fontsize=13)
+        ax_expected.set_ylabel(r"Predicted $\delta C_9$", fontsize=13)
         plt.savefig(Path(path_to_parent_dir).joinpath(f"{name}/predictions_sets_{eval_sets_split}.png"), bbox_inches="tight")
         plt.close()
