@@ -5,8 +5,8 @@ import tqdm
 import pandas
 
 from lib_sbi_btokstll.util import safer_convert_to_int
-from lib_sbi_btokstll.data import get_split, open_output_root_file
-from lib_sbi_btokstll.calc import calculate_B_to_K_star_ell_ell_variables
+from lib_sbi_btokstll.data import get_split, open_simulated_data_root_file
+from lib_sbi_btokstll.calc import calculate_B_to_K_star_lepton_lepton_variables
 
 
 def root_to_parquet(path_to_root_file):
@@ -14,7 +14,7 @@ def root_to_parquet(path_to_root_file):
     path_to_root_file = pathlib.Path(path_to_root_file)
     if not path_to_root_file.is_file():
         raise FileNotFoundError(f"File not found: {path_to_root_file}")
-    dataframe = open_output_root_file(path_to_root_file).drop(columns="__eventType__")
+    dataframe = open_simulated_data_root_file(path_to_root_file).drop(columns="__eventType__")
     save_path = path_to_root_file.with_suffix(".parquet")
     dataframe.to_parquet(save_path)
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     data = combine_files(path_to_data_dir)
     print("Calculating variables...")
-    data = calculate_B_to_K_star_ell_ell_variables(data, ell=lepton_flavor)
+    data = calculate_B_to_K_star_lepton_lepton_variables(data, lepton_flavor=lepton_flavor)
     print(f"Saving data to {path_to_save}")
     data.to_parquet(path_to_save)
         

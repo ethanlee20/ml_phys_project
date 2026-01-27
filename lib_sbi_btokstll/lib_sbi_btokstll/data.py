@@ -2,26 +2,22 @@
 
 import numpy 
 import pandas
-from pandas import DataFrame, Series, cut
 import torch
 import uproot
-
-from lib_sbi_btokstll.constants import trial_ranges
-
-
-def torch_tensor_from_pandas(dataframe):
-
-    """
-    Convert a pandas dataframe to a torch tensor.
-    """
-
-    tensor = torch.from_numpy(dataframe.to_numpy())
-    return tensor
 
 
 def to_torch_tensor(x):
 
-    if isinstance(x, DataFrame|Series):
+    """Convert to torch tensor."""
+    
+    def torch_tensor_from_pandas(dataframe):
+        """
+        Convert a pandas dataframe to a torch tensor.
+        """
+        tensor = torch.from_numpy(dataframe.to_numpy())
+        return tensor
+
+    if isinstance(x, pandas.DataFrame | pandas.Series):
         return torch_tensor_from_pandas(x)
     elif isinstance(x, numpy.ndarray):
         return torch.from_numpy(x)
@@ -30,33 +26,24 @@ def to_torch_tensor(x):
     else: raise ValueError(f"Unsupported type: {type(x)}")
 
 
+def bin(data:pandas.Series, bins):
 
-def get_split(trial):
+    """Bin data using given bins."""
 
-    split = []
-    for split_, range_ in trial_ranges.items():
-        if trial in range_:
-            split.append(split_)
-    if len(split) != 1: raise ValueError(f"Trial not in known split. Trial: {trial}")
-    return split[0]
-
-
-def bin(data:Series, bins):
-
-    binned_indices = cut(
+    binned_indices = pandas.cut(
         data,
         bins,
         labels=False,
         include_lowest=True
     )
-    binned_intervals = cut(
+    binned_intervals = pandas.cut(
         data, 
         bins, 
         labels=None, 
         include_lowest=True
     )
     binned_mids = binned_intervals.apply(lambda interval : interval.mid)
-    binned = DataFrame(
+    binned = pandas.DataFrame(
         {
             "original": data,
             "bin_index": binned_indices, 
@@ -67,14 +54,20 @@ def bin(data:Series, bins):
     return binned
 
 
-def calculate_discrete_label_weights_uniform_prior(labels:Series):
+def calculate_discrete_label_weights_for_uniform_prior(labels:pandas.Series):
 
-    normalized_label_counts = to_torch_tensor(labels.value_counts(normalize=True).sort_index())
+    """Calculate label weights for reweighting classes to uniform distribution."""
+
+    normalized_label_counts = to_torch_tensor(
+        labels.value_counts(normalize=True).sort_index()
+    )
     weights = 1 / normalized_label_counts
     return weights
 
 
-def normalize_using_reference_data(data:DataFrame|Series, reference:DataFrame|Series):
+def normalize_using_reference_data(data:pandas.DataFrame|pandas.Series, reference:pandas.DataFrame|pandas.Series):
+
+    """Standard scale a dataset using the mean and standard deviation of a reference dataset."""
 
     means = reference.mean()
     stds = reference.std()
@@ -82,13 +75,12 @@ def normalize_using_reference_data(data:DataFrame|Series, reference:DataFrame|Se
     return normalized
 
 
-def open_output_root_file(path, unwanted_keys=["persistent;1", "persistent;2"]):
+def open_simulated_data_root_file(path, unwanted_keys=["persistent;1", "persistent;2"]):
     
     """
-    Open an output root file as a pandas dataframe.
+    Open a simulated data root file as a pandas dataframe.
 
-    Each tree will be labeled by a 
-    pandas multi-index.
+    Each tree will be labeled by a pandas multi-index.
     """
 
     with uproot.open(path) as file:
@@ -97,13 +89,13 @@ def open_output_root_file(path, unwanted_keys=["persistent;1", "persistent;2"]):
             key.split(";")[0] for key in file.keys() 
             if key not in unwanted_keys
         ]
-        list_of_dataframes = [
+        tree_dataframes = [
             file[key].arrays(library="pd") 
             for key in keys
         ]
 
-    final_dataframe = pandas.concat(list_of_dataframes, keys=keys, names=["sim_type",])
-    return final_dataframe
+    dataframe = pandas.concat(tree_dataframes, keys=keys, names=["sim_type",])
+    return dataframe
 
 
 

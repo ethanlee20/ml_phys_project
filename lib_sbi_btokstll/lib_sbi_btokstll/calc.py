@@ -411,7 +411,7 @@ def compute_lorentz_boost_matrix_dataframe(three_velocity_dataframe):
     return boost_matrix_dataframe
 
 
-def boost(reference_four_momentum_dataframe, four_vector_dataframe): # four vector?
+def boost(reference_four_momentum_dataframe, four_vector_dataframe):
 
     """
     Lorentz boost a dataframe of four-vectors 
@@ -435,7 +435,7 @@ def boost(reference_four_momentum_dataframe, four_vector_dataframe): # four vect
     return transformed_four_vector_dataframe
 
 
-def calculate_cosine_theta_ell(
+def calculate_cosine_theta_lepton(
     positive_lepton_four_momentum_dataframe, 
     negative_lepton_four_momentum_dataframe, 
     B_meson_four_momentum_dataframe
@@ -667,7 +667,7 @@ def calculate_cosine_chi(
     return cosine_chi_series
 
 
-def find_chi(
+def calculate_chi(
     B_meson_four_momentum_dataframe,
     K_four_momentum_dataframe,
     K_star_four_momentum_dataframe,
@@ -784,7 +784,7 @@ def calculate_difference_between_invariant_masses_of_K_pi_system_and_K_star(
     return difference_series
 
 
-def calculate_B_to_K_star_ell_ell_variables(dataframe, ell):
+def calculate_B_to_K_star_lepton_lepton_variables(dataframe, lepton_flavor):
 
     """
     Calculate detecor and generator level variables of B -> K* l+ l- decays.
@@ -794,7 +794,7 @@ def calculate_B_to_K_star_ell_ell_variables(dataframe, ell):
     difference between K pi invariant mass and K* PDG invariant mass
     """
 
-    assert ell in ("mu", "e")
+    assert lepton_flavor in ("mu", "e")
 
     B_meson_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
         dataframe[["E", "px", "py", "pz"]]
@@ -803,16 +803,16 @@ def calculate_B_to_K_star_ell_ell_variables(dataframe, ell):
         dataframe[["mcE", "mcPX", "mcPY", "mcPZ"]]
     )
     positive_lepton_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
-        dataframe[[f"{ell}_p_E", f"{ell}_p_px", f"{ell}_p_py", f"{ell}_p_pz"]]
+        dataframe[[f"{lepton_flavor}_p_E", f"{lepton_flavor}_p_px", f"{lepton_flavor}_p_py", f"{lepton_flavor}_p_pz"]]
     )
     positive_lepton_generated_four_momentum_dataframe = convert_to_four_momentum_dataframe(
-        dataframe[[f"{ell}_p_mcE", f"{ell}_p_mcPX", f"{ell}_p_mcPY", f"{ell}_p_mcPZ"]]
+        dataframe[[f"{lepton_flavor}_p_mcE", f"{lepton_flavor}_p_mcPX", f"{lepton_flavor}_p_mcPY", f"{lepton_flavor}_p_mcPZ"]]
     )
     negative_lepton_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
-        dataframe[[f"{ell}_m_E", f"{ell}_m_px", f"{ell}_m_py", f"{ell}_m_pz"]]
+        dataframe[[f"{lepton_flavor}_m_E", f"{lepton_flavor}_m_px", f"{lepton_flavor}_m_py", f"{lepton_flavor}_m_pz"]]
     )
     negative_lepton_generated_four_momentum_dataframe = convert_to_four_momentum_dataframe(
-        dataframe[[f"{ell}_m_mcE", f"{ell}_m_mcPX", f"{ell}_m_mcPY", f"{ell}_m_mcPZ"]]
+        dataframe[[f"{lepton_flavor}_m_mcE", f"{lepton_flavor}_m_mcPX", f"{lepton_flavor}_m_mcPY", f"{lepton_flavor}_m_mcPZ"]]
     )
     K_measured_four_momentum_dataframe = convert_to_four_momentum_dataframe(
         dataframe[["K_p_E", "K_p_px", "K_p_py", "K_p_pz"]]
@@ -843,12 +843,12 @@ def calculate_B_to_K_star_ell_ell_variables(dataframe, ell):
         particle_one_four_momentum_dataframe=positive_lepton_generated_four_momentum_dataframe, 
         particle_two_four_momentum_dataframe=negative_lepton_generated_four_momentum_dataframe
     )
-    dataframe[f"cos_theta_{ell}"] = calculate_cosine_theta_ell(
+    dataframe[f"cos_theta_{lepton_flavor}"] = calculate_cosine_theta_lepton(
         positive_lepton_four_momentum_dataframe=positive_lepton_measured_four_momentum_dataframe, 
         negative_lepton_four_momentum_dataframe=negative_lepton_measured_four_momentum_dataframe, 
         B_meson_four_momentum_dataframe=B_meson_measured_four_momentum_dataframe
     )
-    dataframe[f"cos_theta_{ell}_mc"] = calculate_cosine_theta_ell(
+    dataframe[f"cos_theta_{lepton_flavor}_mc"] = calculate_cosine_theta_lepton(
         positive_lepton_four_momentum_dataframe=positive_lepton_generated_four_momentum_dataframe, 
         negative_lepton_four_momentum_dataframe=negative_lepton_generated_four_momentum_dataframe, 
         B_meson_four_momentum_dataframe=B_meson_generated_four_momentum_dataframe
@@ -877,14 +877,14 @@ def calculate_B_to_K_star_ell_ell_variables(dataframe, ell):
         positive_lepton_four_momentum_dataframe=positive_lepton_generated_four_momentum_dataframe,
         negative_lepton_four_momentum_dataframe=negative_lepton_generated_four_momentum_dataframe,
     )
-    dataframe["chi"] = find_chi(
+    dataframe["chi"] = calculate_chi(
         B_meson_four_momentum_dataframe=B_meson_measured_four_momentum_dataframe,
         K_four_momentum_dataframe=K_measured_four_momentum_dataframe,
         K_star_four_momentum_dataframe=K_star_measured_four_momentum_dataframe,
         positive_lepton_four_momentum_dataframe=positive_lepton_measured_four_momentum_dataframe,
         negative_lepton_four_momentum_dataframe=negative_lepton_measured_four_momentum_dataframe,
     )
-    dataframe[f"chi_mc"] = find_chi(
+    dataframe[f"chi_mc"] = calculate_chi(
         B_meson_four_momentum_dataframe=B_meson_generated_four_momentum_dataframe,
         K_four_momentum_dataframe=K_generated_four_momentum_dataframe,
         K_star_four_momentum_dataframe=K_star_generated_four_momentum_dataframe,

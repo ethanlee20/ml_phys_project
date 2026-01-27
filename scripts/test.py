@@ -11,7 +11,7 @@ import torch
 
 from lib_sbi_btokstll.training import Trainer, Dataset, select_device, open_model_state_dict
 from lib_sbi_btokstll.predictor import Predictor
-from lib_sbi_btokstll.data import to_torch_tensor, calculate_discrete_label_weights_uniform_prior, normalize_using_reference_data, bin
+from lib_sbi_btokstll.data import to_torch_tensor, calculate_discrete_label_weights_for_uniform_prior, normalize_using_reference_data, bin
 from lib_sbi_btokstll.models import MLP
 
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     print(f"Num train examples: {len(dataset_train)}")
     print(f"Num validation examples: {len(dataset_val)}")
         
-    loss_label_weights = calculate_discrete_label_weights_uniform_prior(
+    loss_label_weights = calculate_discrete_label_weights_for_uniform_prior(
         binned_labels.xs("train", level="split")["bin_index"]
     ).to(torch.float32).to(device)
 
